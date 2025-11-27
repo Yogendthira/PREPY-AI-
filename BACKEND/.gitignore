@@ -1,0 +1,6 @@
+# Add .env to gitignore to keep API key secure
+.env
+*.pyc
+__pycache__/
+uploads/
+*.log

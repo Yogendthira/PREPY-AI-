@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading - Prepy AI</title>
+    <link rel="icon" type="image/png" href="FAVICON.png">
+    <link rel="stylesheet" href="loader.css">
+</head>
+
+<body>
+    <div class="loader-container">
+        <video autoplay muted playsinline class="loader-video">
+            <source src="LOADER.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <script>
+        // Get the prep type from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const prepType = urlParams.get('type') || 'interview';
+
+        // Redirect to difficulty selection after 6 seconds (full video duration)
+        setTimeout(() => {
+            window.location.href = `difficulty.html?type=${prepType}`;
+        }, 7000);
+    </script>
+</body>
+
+</html>

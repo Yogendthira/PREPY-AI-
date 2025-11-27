@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepy AI - Session Review</title>
+    <link rel="icon" type="image/png" href="FAVICON.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff41, #008f11);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        .video-container {
+            width: 100%;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #333;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
+            margin-bottom: 30px;
+        }
+
+        video {
+            width: 100%;
+            max-height: 60vh;
+            border-radius: 8px;
+            background: #000;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            border: none;
+        }
+
+        .btn-primary {
+            background-color: #00ff41;
+            color: #000;
+        }
+
+        .btn-primary:hover {
+            background-color: #00d435;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background-color: #444;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Session Review</h1>
+        <p>Great job! Here is the recording of your session.</p>
+
+        <div class="video-container">
+            <video id="sessionVideo" controls autoplay></video>
+        </div>
+
+        <div class="controls">
+            <a href="#" id="downloadBtn" class="btn btn-primary">Download Recording</a>
+            <a href="index.html" class="btn btn-secondary">Back to Home</a>
+        </div>
+    </div>
+
+    <script>
+        // Retrieve the video blob from localStorage or URL (passed from main.html)
+        // Since we can't pass large blobs via URL, we'll assume main.html saved it to IndexedDB or we just use the saved file URL if available.
+        // For simplicity in this demo, we will try to get the object URL passed via query param or localStorage.
+
+        // However, a better approach for a seamless transition with a blob is to use IndexedDB, but for now let's rely on the user downloading it or just showing a placeholder if not found.
+
+        // ACTUALLY: main.html saves to server. We can play it back if we know the filename.
+        // But main.html also has the Blob in memory. 
+
+        // Let's try to get the filename from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const filename = urlParams.get('video');
+
+        if (filename) {
+            // If we have a filename served by backend
+            // Assuming backend serves static files from HACKATHONRECORDINGS or similar
+            // We need a route for this. For now, let's assume the user downloads it.
+
+            // Wait, the user wants to SEE it.
+            // Let's try to use the Blob URL if passed (only works in same session)
+            // Or better: main.html will save to server, and we play from server.
+
+            // Let's assume we can play back from a local URL if we pass it.
+        }
+
+        // ALTERNATIVE: We can use the File API to show the last recorded video if we had access, but we don't.
+
+        // STRATEGY: 
+        // 1. main.html saves the blob to a global variable or IndexedDB? No, too complex for now.
+        // 2. main.html creates a URL.createObjectURL(blob) and passes it. This works for the current tab session!
+
+        const videoUrl = sessionStorage.getItem('lastRecordingUrl');
+        if (videoUrl) {
+            const video = document.getElementById('sessionVideo');
+            video.src = videoUrl;
+
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.href = videoUrl;
+            downloadBtn.download = 'session-recording.webm';
+        } else {
+            document.querySelector('p').textContent = "Recording saved to server. Please check the 'HACKATHONRECORDINGS' folder.";
+            document.getElementById('downloadBtn').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

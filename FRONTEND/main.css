@@ -1,0 +1,420 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1a1a1a;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    overflow: hidden;
+}
+
+.evaluation-container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Top Bar */
+.top-bar {
+    background-color: #000;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.session-info h2 {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+}
+
+.timer {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.top-logo {
+    height: 80px;
+    width: auto;
+}
+
+.controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.control-btn {
+    background-color: #2d2d2d;
+    border: none;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.control-btn:hover {
+    background-color: #3d3d3d;
+}
+
+.control-btn.muted,
+.control-btn.off {
+    background-color: #d32f2f;
+}
+
+.end-btn {
+    background-color: #d32f2f;
+}
+
+.end-btn:hover {
+    background-color: #b71c1c;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    overflow: hidden;
+}
+
+/* Video Section - Side by Side Layout */
+.video-section {
+    flex: 2;
+    display: flex;
+    gap: 20px;
+}
+
+/* AI Evaluator Box */
+.evaluator-box {
+    flex: 1;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Character Container - Crops bottom to hide text */
+.character-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+
+.character-image {
+    width: 100%;
+    height: 140%;
+    object-fit: cover;
+    object-position: top;
+    margin-top: 0;
+}
+
+/* Mouth Animation - Top Right Corner */
+.mouth-animation {
+    position: absolute;
+    top: 10%;
+    right: 5%;
+    width: 150px;
+    height: 100px;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+    border-radius: 50%;
+    mix-blend-mode: screen;
+}
+
+.evaluator-label {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+/* User Video Box - Same Size */
+.user-video {
+    flex: 1;
+    background-color: #2d2d2d;
+    border-radius: 12px;
+    border: 2px solid #444;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.video-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #888;
+}
+
+.video-placeholder svg {
+    margin-bottom: 10px;
+}
+
+.video-placeholder p {
+    font-size: 0.9rem;
+}
+
+.user-label {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+/* Side Panel - Terminal Style */
+.side-panel {
+    flex: 1;
+    background: #000000;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    min-width: 350px;
+    max-width: 450px;
+    border: 2px solid #000000;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Terminal scan line effect */
+.side-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(0deg,
+            rgba(0, 255, 65, 0.03) 0px,
+            rgba(0, 255, 65, 0.03) 1px,
+            transparent 1px,
+            transparent 2px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Terminal flicker effect */
+.side-panel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 255, 65, 0.02);
+    pointer-events: none;
+    z-index: 1;
+    animation: flicker 0.15s infinite;
+}
+
+@keyframes flicker {
+    0% {
+        opacity: 0.97;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.97;
+    }
+}
+
+.panel-header {
+    padding: 15px 20px;
+    border-bottom: 2px solid #000000;
+    background: rgba(0, 255, 65, 0.05);
+    position: relative;
+    z-index: 2;
+}
+
+.panel-header h3 {
+    font-size: 1rem;
+    font-family: 'Courier New', monospace;
+    color: #ffffff;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 700;
+}
+
+.chat-area {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-family: 'Courier New', monospace;
+    position: relative;
+    z-index: 2;
+}
+
+.message {
+    padding: 0;
+    border-radius: 0;
+    max-width: 100%;
+    background: transparent;
+    border: none;
+}
+
+.ai-message {
+    align-self: flex-start;
+    color: #00ff40;
+}
+
+.user-message {
+    align-self: flex-start;
+    color: #00d5ff;
+}
+
+.message p {
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    font-family: 'Courier New', monospace;
+}
+
+.message strong {
+    display: inline;
+    margin-bottom: 0;
+    margin-right: 8px;
+    font-size: 0.9rem;
+    color: inherit;
+    font-weight: 700;
+}
+
+/* Terminal prompt style */
+.ai-message strong::before {
+    content: '> ';
+    color: #00ff41;
+    font-weight: 700;
+}
+
+.user-message strong::before {
+    content: '$ ';
+    color: #00d4ff;
+    font-weight: 700;
+}
+
+/* Typing indicator for terminal */
+.typing-indicator {
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    49% {
+        opacity: 1;
+    }
+
+    50%,
+    100% {
+        opacity: 0;
+    }
+}
+
+/* Loader is now handled dynamically in JS */
+
+.input-area {
+    padding: 20px;
+    border-top: 2px solid #00ff41;
+    background: rgba(0, 255, 65, 0.05);
+    display: flex;
+    gap: 10px;
+    position: relative;
+    z-index: 2;
+}
+
+.input-area input {
+    flex: 1;
+    background-color: #000000;
+    border: 1px solid #000000;
+    color: #00ff41;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: 'Courier New', monospace;
+}
+
+.input-area input:focus {
+    outline: none;
+    border-color: #00ff41;
+}
+
+.input-area input::placeholder {
+    color: rgba(0, 255, 65, 0.5);
+}
+
+.input-area button {
+    background-color: #00ff41;
+    border: none;
+    color: #000000;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+}
+
+.input-area button:hover {
+    background-color: #00d435;
+    transform: translateY(-2px);
+}
+
+/* Scrollbar Styling - Terminal Theme */
+.chat-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-area::-webkit-scrollbar-track {
+    background: #000000;
+    border-radius: 4px;
+}
+
+.chat-area::-webkit-scrollbar-thumb {
+    background: #00ff41;
+    border-radius: 4px;
+}
+
+.chat-area::-webkit-scrollbar-thumb:hover {
+    background: #00d435;
+}

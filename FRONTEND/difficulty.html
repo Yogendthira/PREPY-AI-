@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepy AI - Select Difficulty</title>
+    <link rel="icon" type="image/png" href="FAVICON.png">
+    <link rel="stylesheet" href="difficulty.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="title-section">
+            <img src="PICK YOUR EVALUATION TIER.png" alt="Pick Your Evaluation Tier" class="title-image">
+        </div>
+        <div class="difficulty-buttons-container">
+            <a href="#" class="difficulty-button superman-button" data-mode="superman">
+                <img src="SUPERMAN MODE.png" alt="Superman Mode">
+            </a>
+            <a href="#" class="difficulty-button batman-button" data-mode="batman">
+                <img src="BATMAN MODE.png" alt="Batman Mode">
+            </a>
+            <a href="#" class="difficulty-button hulk-button" data-mode="hulk">
+                <img src="HULK MODE.png" alt="Hulk Mode">
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Get the prep type from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const prepType = urlParams.get('type') || 'interview';
+
+        // Add click handlers to difficulty buttons
+        document.querySelectorAll('.difficulty-button').forEach(button => {
+            button.addEventListener('click', function (e) {
+                e.preventDefault();
+                const mode = this.getAttribute('data-mode');
+                window.location.href = `upload.html?mode=${mode}&type=${prepType}`;
+            });
+        });
+    </script>
+</body>
+
+</html>

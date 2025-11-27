@@ -1,0 +1,126 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 40px 20px;
+}
+
+.info-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.info-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo {
+    width: 150px;
+    margin-bottom: 20px;
+}
+
+.info-header h1 {
+    font-size: 3rem;
+    background: linear-gradient(135deg, #00ff88, #00ccff);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
+}
+
+.info-content {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 30px;
+}
+
+.info-image {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 30px;
+    border-radius: 10px;
+}
+
+.info-text h2 {
+    font-size: 2rem;
+    color: #00ff88;
+    margin-bottom: 15px;
+}
+
+.info-text h3 {
+    font-size: 1.5rem;
+    color: #00ccff;
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+.info-text p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    color: #ccc;
+}
+
+.info-text ul,
+.info-text ol {
+    margin-left: 30px;
+    margin-bottom: 20px;
+}
+
+.info-text li {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #ddd;
+    margin-bottom: 10px;
+}
+
+.creator-info {
+    text-align: center;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.creator-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+    border: 3px solid #00ff88;
+}
+
+.creator-info p {
+    font-size: 1.2rem;
+    color: #00ff88;
+}
+
+.back-button-container {
+    text-align: center;
+}
+
+.back-button {
+    display: inline-block;
+    padding: 15px 40px;
+    background: linear-gradient(135deg, #00ff88, #00ccff);
+    color: #000;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.back-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+}

@@ -1,0 +1,106 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #000;
+    /* Assuming a dark theme based on "AI" context, can be adjusted */
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+    padding-top: 0;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 1500px;
+    /* Increased to allow wider content */
+    width: 100%;
+    gap: 20px;
+}
+
+img {
+    max-width: 600px;
+    height: auto;
+    display: block;
+}
+
+/* Renamed from .header-image */
+.introducing-section {
+    margin-top: -350px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.introducing-section img {
+    width: 1500px;
+    max-width: 1500px;
+}
+
+/* Renamed from .main-logo */
+.prepy-logo-section img {
+    width: 1300px;
+    margin-top: -400px;
+    max-width: 1300px;
+    border-radius: 40px;
+}
+
+/* Renamed from .button-container */
+.navigation-buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    width: 100%;
+    /* Fixed width */
+    margin-top: -240px;
+    flex-wrap: nowrap;
+    /* Forced side-by-side */
+}
+
+.image-button {
+    display: block;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    cursor: pointer;
+}
+
+.image-button:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.image-button img {
+    max-width: 600px;
+}
+
+.info-section {
+    /* You can position this yourself */
+    margin-top: -750px;
+    width: 100%;
+    /* Ensure it spans the full width */
+    display: flex;
+    
+    justify-content: flex-end;
+    /* Move to the right */
+    padding-right: 100px;
+    /* Add some spacing from the edge */
+}
+
+.info-section img {
+    width: 200px;
+    /* Adjust size as needed */
+    border-radius: 20px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.info-section img:hover {
+    transform: scale(1.1);
+}
