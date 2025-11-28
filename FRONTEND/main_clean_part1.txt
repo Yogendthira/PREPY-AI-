@@ -1,0 +1,300 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prepy AI - Evaluation Session</title>
+    <link rel="icon" type="image/png" href="FAVICON.png">
+    <link rel="stylesheet" href="main.css">
+</head>
+
+<body>
+    <div class="evaluation-container">
+        <div class="top-bar">
+            <div class="session-info">
+                <h2 id="sessionTitle">Interview Preparation</h2>
+                <span class="timer" id="timer">00:00</span>
+            </div>
+            <div class="logo-container">
+                <img src="LOGO PLAIN.png" alt="Prepy AI Logo" class="top-logo">
+            </div>
+            <div class="controls">
+                <button class="control-btn" id="micBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                        <path
+                            d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+                    </svg>
+                </button>
+                <button class="control-btn" id="cameraBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z" />
+                    </svg>
+                </button>
+                <button class="control-btn end-btn" id="endBtn">End Session</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="video-section">
+                <div class="evaluator-box">
+                    <div class="character-container">
+                        <img id="characterImage" src="" alt="AI Evaluator" class="character-image">
+                        <video id="mouthVideo" class="mouth-animation" loop muted>
+                            <source src="MOUTHANIMATION.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    <div class="evaluator-label" id="evaluatorLabel">AI Evaluator</div>
+                </div>
+
+                <div class="user-video">
+                    <video id="userWebcam" autoplay muted playsinline
+                        style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px; transform: scaleX(-1);"></video>
+                    <div class="user-label">You</div>
+                </div>
+            </div>
+
+            <div class="side-panel">
+                <div class="panel-header">
+                    <h3>RESPONSE HISTORY</h3>
+                </div>
+                <div class="chat-area" id="chatArea">
+                    <div class="message ai-message">
+                        <p><strong>AI:</strong> System initialized. Ready for evaluation.</p>
+                    </div>
+                </div>
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Listening... (Speak now)">
+                    <button id="sendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const prepType = urlParams.get('type') || 'interview';
+        const mode = urlParams.get('mode') || 'superman';
+
+        let sessionData = null;
+        let conversationHistory = [];
+        let mediaRecorder;
+        let recordedChunks = [];
+        let recognition;
+        let isMicMuted = false;
+        let isAiSpeaking = false;
+        let isRecognitionActive = false;
+        let silenceTimer = null;
+        let currentTranscript = '';
+
+        // Turn counting logic
+        let turnCount = 0;
+        const MAX_TURNS = 8;
+
+        try {
+            const stored = localStorage.getItem('prepySession');
+            if (stored) {
+                const session = JSON.parse(stored);
+                sessionData = session.sessionData;
+                conversationHistory = session.history || [];
+            }
+        } catch (e) {
+            console.error('Session load error:', e);
+        }
+
+        document.getElementById('sessionTitle').textContent = prepType === 'interview' ? 'PREPY Pvt Ltd Interview' : 'Hackathon Prep';
+
+        const modeImages = { 'superman': 'SUPERMAN MODE.png', 'batman': 'BATMAN MODE.png', 'hulk': 'HULK MODE.png' };
+        const modeNames = { 'superman': 'INTERVIEWER AGENT SUPERMAN', 'batman': 'INTERVIEWER AGENT BATMAN', 'hulk': 'INTERVIEWER AGENT HULK' };
+
+        document.getElementById('characterImage').src = modeImages[mode];
+        document.getElementById('evaluatorLabel').textContent = `AI - ${modeNames[mode]}`;
+
+        const mouthVideo = document.getElementById('mouthVideo');
+        const messageInput = document.getElementById('messageInput');
+
+        // --- Camera & Recording ---
+        async function initCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const userVideo = document.getElementById('userWebcam');
+                userVideo.srcObject = stream;
+
+                mediaRecorder = new MediaRecorder(stream);
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+                mediaRecorder.start();
+                console.log("Camera started and recording...");
+
+                if (!isMicMuted) {
+                    setTimeout(() => startListening(), 500);
+                }
+
+            } catch (err) {
+                console.error("Error accessing camera:", err);
+                alert("Could not access camera. Please allow camera permissions.");
+            }
+        }
+
+        window.addEventListener('load', initCamera);
+
+        // --- Robust Speech Recognition ---
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                console.log("Speech recognition started");
+                isRecognitionActive = true;
+                if (!isMicMuted) {
+                    messageInput.placeholder = "Listening... (Speak now)";
+                    document.getElementById('micBtn').style.backgroundColor = '#4caf50'; // Solid green to indicate listening
+                }
+            };
+
+            recognition.onend = () => {
+                console.log("Speech recognition ended");
+                isRecognitionActive = false;
+                document.getElementById('micBtn').style.backgroundColor = ''; // Reset color
+
+                // Auto-restart if it shouldn't be stopped
+                if (!isMicMuted && !isAiSpeaking) {
+                    console.log("Auto-restarting speech recognition...");
+                    setTimeout(() => startListening(), 300);
+                } else if (isAiSpeaking) {
+                    messageInput.placeholder = "AI Speaking...";
+                } else {
+                    messageInput.placeholder = "Mic Muted";
+                }
+            };
+
+            recognition.onresult = (event) => {
+                if (isMicMuted || isAiSpeaking) return;
+
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                if (finalTranscript) {
+                    currentTranscript += finalTranscript + ' ';
+                    console.log("Final transcript:", finalTranscript);
+                }
+
+                // Update input box with what we have so far
+                const displayText = (currentTranscript + interimTranscript).trim();
+                if (displayText) {
+                    messageInput.value = displayText;
+                }
+
+                // Reset silence timer
+                if (silenceTimer) clearTimeout(silenceTimer);
+
+                // Wait for 2 seconds of silence before sending
+                if (currentTranscript.trim() || interimTranscript.trim()) {
+                    silenceTimer = setTimeout(() => {
+                        if (currentTranscript.trim()) {
+                            console.log("Silence detected, sending message...");
+                            messageInput.value = currentTranscript.trim();
+                            sendMessage();
+                            currentTranscript = '';
+                        }
+                    }, 2000);
+                }
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Speech recognition error:", event.error);
+                isRecognitionActive = false;
+                document.getElementById('micBtn').style.backgroundColor = '';
+
+                if (event.error === 'not-allowed') {
+                    isMicMuted = true;
+                    updateMicButtonUI();
+                    messageInput.placeholder = "Mic permission denied";
+                    alert("Microphone access denied. Please allow microphone access in your browser settings.");
+                } else if (event.error === 'no-speech') {
+                    // Just restart if no speech detected
+                    if (!isMicMuted && !isAiSpeaking) {
+                        setTimeout(() => startListening(), 200);
+                    }
+                } else if (event.error === 'network') {
+                    console.log("Network error, retrying...");
+                    setTimeout(() => startListening(), 1000);
+                }
+            };
+        } else {
+            alert("Your browser does not support speech recognition. Please use Chrome or Edge.");
+        }
+
+        function startListening() {
+            if (recognition && !isMicMuted && !isAiSpeaking && !isRecognitionActive) {
+                try {
+                    recognition.start();
+                } catch (e) {
+                    // Ignore error if already started
+                    if (e.message.indexOf('already started') === -1) {
+                        console.error("Recognition start error:", e);
+                    }
+                    isRecognitionActive = true;
+                }
+            }
+        }
+
+        function stopListening() {
+            if (recognition) {
+                try {
+                    recognition.stop();
+                } catch (e) {
+                    console.error("Recognition stop error:", e);
+                }
+                isRecognitionActive = false;
+            }
+            if (silenceTimer) {
+                clearTimeout(silenceTimer);
+                silenceTimer = null;
+            }
+        }
+
+        // --- Text-to-Speech & Animation ---
+        let selectedVoice = null;
+
+        function loadVoices() {
+            const voices = window.speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                // Try to find a specific consistent voice
+                selectedVoice = voices.find(voice =>
+                    voice.name.includes('Microsoft Mark') ||
+                    voice.name.includes('Google US English') ||
+                    (voice.lang.includes('en') && voice.name.includes('Male'))
+                ) || voices.find(voice => voice.lang.includes('en'));
+
+                console.log("Voice selected:", selectedVoice ? selectedVoice.name : "Default");
+            }
+        }
+
+        // Load voices immediately and also wait for the event
+        loadVoices();
+        if (window.speechSynthesis.onvoiceschanged !== undefined) {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        function speakText(text, isLastMessage = false) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+
+                // Ensure voices are loaded if selectedVoice is still null
+                if (!selectedVoice) loadVoices();
+

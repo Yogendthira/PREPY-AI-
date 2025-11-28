@@ -257,7 +257,7 @@ body {
 .panel-header {
     padding: 15px 20px;
     border-bottom: 2px solid #000000;
-    background: rgba(0, 255, 65, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     position: relative;
     z-index: 2;
 }
@@ -353,7 +353,7 @@ body {
 .input-area {
     padding: 20px;
     border-top: 2px solid #00ff41;
-    background: rgba(0, 255, 65, 0.05);
+    background: rgba(0, 0, 0, 0.05);
     display: flex;
     gap: 10px;
     position: relative;
