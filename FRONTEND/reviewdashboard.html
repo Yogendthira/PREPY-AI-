@@ -4,8 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Prepy AI - Session Review</title>
+    <title>Prepy AI - Performance Review Dashboard</title>
     <link rel="icon" type="image/png" href="FAVICON.png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -14,137 +16,584 @@
         }
 
         body {
-            background-color: #000000;
+            background: #000000;
             color: #fff;
             font-family: 'Inter', sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            overflow-x: hidden;
         }
 
-        .container {
-            width: 90%;
-            max-width: 1000px;
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header-logo {
+            width: 650px;
+            height: auto;
+            margin-bottom: 20px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00ff41, #00d4ff, #7b2ff7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .overall-score {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+            border: 2px solid #00ff41;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 40px rgba(0, 255, 65, 0.2);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .score-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(#00ff41 0% var(--score-percent), #333 var(--score-percent) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+            animation: rotateIn 1s ease;
+        }
+
+        .score-circle::before {
+            content: '';
+            width: 170px;
+            height: 170px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .score-value {
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #00ff41;
+            z-index: 1;
+        }
+
+        .score-label {
+            font-size: 1.5rem;
+            color: #aaa;
+            margin-bottom: 10px;
+        }
+
+        .performance-grade {
+            display: inline-block;
+            padding: 10px 30px;
+            background: linear-gradient(135deg, #00ff41, #00d435);
+            color: #000;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-radius: 50px;
+            margin-top: 10px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1a1a1a, #252525);
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.8s ease;
+            animation-fill-mode: both;
+        }
+
+        .metric-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .metric-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .metric-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .metric-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        .metric-card:nth-child(5) {
+            animation-delay: 0.5s;
+        }
+
+        .metric-card:nth-child(6) {
+            animation-delay: 0.6s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ff41;
+            box-shadow: 0 10px 30px rgba(0, 255, 65, 0.2);
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .metric-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .metric-score {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #00ff41;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff41, #00d4ff);
+            border-radius: 10px;
+            transition: width 1.5s ease;
+            animation: fillProgress 1.5s ease;
+        }
+
+        .metric-details {
+            color: #888;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .metric-details li {
+            margin-bottom: 8px;
+            list-style: none;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .metric-details li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00ff41;
+            font-weight: bold;
+        }
+
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .chart-container {
+            background: linear-gradient(135deg, #1a1a1a, #252525);
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 30px;
+            animation: fadeInUp 0.8s ease 0.7s;
+            animation-fill-mode: both;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
             text-align: center;
         }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #00ff41, #008f11);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p {
-            color: #888;
-            margin-bottom: 30px;
-        }
-
-        .video-container {
-            width: 100%;
-            background: #1a1a1a;
-            border-radius: 12px;
-            padding: 20px;
+        .video-section {
+            background: linear-gradient(135deg, #1a1a1a, #252525);
             border: 1px solid #333;
-            box-shadow: 0 0 30px rgba(0, 255, 65, 0.1);
-            margin-bottom: 30px;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease 0.8s;
+            animation-fill-mode: both;
+        }
+
+        .video-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #00ff41;
         }
 
         video {
             width: 100%;
-            max-height: 60vh;
-            border-radius: 8px;
+            max-height: 500px;
+            border-radius: 12px;
             background: #000;
+        }
+
+        .feedback-section {
+            background: linear-gradient(135deg, #1a1a1a, #252525);
+            border: 1px solid #333;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 40px;
+            animation: fadeInUp 0.8s ease 0.9s;
+            animation-fill-mode: both;
+        }
+
+        .feedback-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #00ff41;
+        }
+
+        .feedback-item {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #0f0f0f;
+            border-left: 4px solid #00ff41;
+            border-radius: 8px;
+        }
+
+        .feedback-item h3 {
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #00d4ff;
+        }
+
+        .feedback-item p {
+            color: #aaa;
+            line-height: 1.6;
         }
 
         .controls {
             display: flex;
             gap: 20px;
             justify-content: center;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease 1s;
+            animation-fill-mode: both;
         }
 
         .btn {
-            padding: 12px 30px;
-            border-radius: 8px;
+            padding: 15px 40px;
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             text-decoration: none;
             border: none;
+            display: inline-block;
         }
 
         .btn-primary {
-            background-color: #00ff41;
+            background: linear-gradient(135deg, #00ff41, #00d435);
             color: #000;
         }
 
         .btn-primary:hover {
-            background-color: #00d435;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 65, 0.4);
         }
 
         .btn-secondary {
-            background-color: #333;
+            background: #333;
             color: #fff;
+            border: 1px solid #555;
         }
 
         .btn-secondary:hover {
-            background-color: #444;
+            background: #444;
+            border-color: #00ff41;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes rotateIn {
+            from {
+                opacity: 0;
+                transform: rotate(-180deg) scale(0.5);
+            }
+
+            to {
+                opacity: 1;
+                transform: rotate(0) scale(1);
+            }
+        }
+
+        @keyframes fillProgress {
+            from {
+                width: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .score-circle {
+                width: 150px;
+                height: 150px;
+            }
+
+            .score-circle::before {
+                width: 125px;
+                height: 125px;
+            }
+
+            .score-value {
+                font-size: 2.5rem;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Session Review</h1>
-        <p>Great job! Here is the recording of your session.</p>
-
-        <div class="video-container">
-            <video id="sessionVideo" controls autoplay></video>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="header">
+            <img src="LOGO PLAIN.png" alt="Prepy AI Logo" class="header-logo">
+            <h1> Performance Review Dashboard</h1>
+            <p>Comprehensive analysis of your interview/hackathon session</p>
         </div>
 
+        <!-- Overall Score -->
+        <div class="overall-score">
+            <div class="score-label">Overall Performance Score</div>
+            <div class="score-circle" style="--score-percent: 85%">
+                <div class="score-value" id="overallScore">85</div>
+            </div>
+            <div class="performance-grade" id="performanceGrade">Excellent</div>
+        </div>
+
+        <!-- Performance Metrics Grid -->
+        <div class="metrics-grid">
+            <!-- English Skills -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">🗣️ English Communication</div>
+                    <div class="metric-score" id="englishScore">88</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 88%"></div>
+                </div>
+                <ul class="metric-details">
+                    <li>Grammar & Vocabulary: Excellent</li>
+                    <li>Pronunciation: Clear & Fluent</li>
+                    <li>Sentence Structure: Well-formed</li>
+                    <li>Fluency: Natural flow</li>
+                </ul>
+            </div>
+
+            <!-- Technical Performance -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">💻 Technical Skills</div>
+                    <div class="metric-score" id="technicalScore">82</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 82%"></div>
+                </div>
+                <ul class="metric-details">
+                    <li>Problem-solving: Strong approach</li>
+                    <li>Code Quality: Clean & efficient</li>
+                    <li>Technical Knowledge: Solid</li>
+                    <li>Debugging Skills: Effective</li>
+                </ul>
+            </div>
+
+            <!-- Communication Skills -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">💬 Communication</div>
+                    <div class="metric-score" id="communicationScore">90</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 90%"></div>
+                </div>
+                <ul class="metric-details">
+                    <li>Clarity of Expression: Excellent</li>
+                    <li>Active Listening: Attentive</li>
+                    <li>Articulation: Clear & concise</li>
+                    <li>Response Time: Appropriate</li>
+                </ul>
+            </div>
+
+            <!-- Team Collaboration -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">🤝 Team Collaboration</div>
+                    <div class="metric-score" id="teamScore">85</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 85%"></div>
+                </div>
+                <ul class="metric-details">
+                    <li>Teamwork: Collaborative</li>
+                    <li>Leadership: Proactive</li>
+                    <li>Conflict Resolution: Diplomatic</li>
+                    <li>Contribution: Significant</li>
+                </ul>
+            </div>
+
+            <!-- Soft Skills -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">🌟 Soft Skills</div>
+                    <div class="metric-score" id="softSkillsScore">87</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 87%"></div>
+                </div>
+                <ul class="metric-details">
+                    <li>Confidence: High</li>
+                    <li>Time Management: Efficient</li>
+                    <li>Adaptability: Flexible</li>
+                    <li>Creativity: Innovative</li>
+                </ul>
+            </div>
+
+            <!-- Project Performance -->
+            <div class="metric-card">
+                <div class="metric-header">
+                    <div class="metric-title">🚀 Project Quality</div>
+                    <div class="metric-score" id="projectScore">83</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 83%"></div>
+                </div>
+                <ul class="metric-details">
+                    <li>Completeness: Well-executed</li>
+                    <li>Innovation: Creative solution</li>
+                    <li>Functionality: Robust</li>
+                    <li>Presentation: Professional</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <div class="chart-title">Skills Radar Chart</div>
+                <canvas id="radarChart"></canvas>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Performance Breakdown</div>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Video Recording Section -->
+        <div class="video-section">
+            <h2>📹 Session Recording</h2>
+            <video id="sessionVideo" controls></video>
+        </div>
+
+        <!-- Detailed Feedback -->
+        <div class="feedback-section">
+            <h2>📝 Detailed Feedback & Recommendations</h2>
+
+            <div class="feedback-item">
+                <h3>Strengths</h3>
+                <p>Excellent communication skills with clear articulation. Strong technical foundation demonstrated
+                    through problem-solving approach. Great team collaboration and leadership qualities. Confident
+                    presentation and professional demeanor throughout the session.</p>
+            </div>
+
+            <div class="feedback-item">
+                <h3>Areas for Improvement</h3>
+                <p>Consider spending more time on edge case analysis. Practice explaining complex technical concepts in
+                    simpler terms. Work on time allocation for different sections of the project. Enhance debugging
+                    strategies for faster issue resolution.</p>
+            </div>
+
+            <div class="feedback-item">
+                <h3>English Language Assessment</h3>
+                <p>Grammar: Advanced level with minimal errors. Vocabulary: Rich and contextually appropriate.
+                    Pronunciation: Clear with good intonation. Fluency: Natural conversational flow with minimal
+                    hesitation. Overall English proficiency is at a professional business level.</p>
+            </div>
+
+            <div class="feedback-item">
+                <h3>Recommendations</h3>
+                <p>Continue practicing mock interviews to maintain confidence. Explore advanced data structures and
+                    algorithms. Participate in more team projects to enhance collaboration skills. Consider contributing
+                    to open-source projects for real-world experience.</p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
         <div class="controls">
-            <a href="#" id="downloadBtn" class="btn btn-primary">Download Recording</a>
-            <a href="index.html" class="btn btn-secondary">Back to Home</a>
+            <a href="#" id="downloadBtn" class="btn btn-primary">📥 Download Recording</a>
+            <button onclick="window.print()" class="btn btn-secondary">🖨️ Print Report</button>
+            <a href="index.html" class="btn btn-secondary">🏠 Back to Home</a>
+            <a href="main.html" class="btn btn-secondary">🔄 New Session</a>
         </div>
     </div>
 
     <script>
-        // Retrieve the video blob from localStorage or URL (passed from main.html)
-        // Since we can't pass large blobs via URL, we'll assume main.html saved it to IndexedDB or we just use the saved file URL if available.
-        // For simplicity in this demo, we will try to get the object URL passed via query param or localStorage.
-
-        // However, a better approach for a seamless transition with a blob is to use IndexedDB, but for now let's rely on the user downloading it or just showing a placeholder if not found.
-
-        // ACTUALLY: main.html saves to server. We can play it back if we know the filename.
-        // But main.html also has the Blob in memory. 
-
-        // Let's try to get the filename from URL params
-        const urlParams = new URLSearchParams(window.location.search);
-        const filename = urlParams.get('video');
-
-        if (filename) {
-            // If we have a filename served by backend
-            // Assuming backend serves static files from HACKATHONRECORDINGS or similar
-            // We need a route for this. For now, let's assume the user downloads it.
-
-            // Wait, the user wants to SEE it.
-            // Let's try to use the Blob URL if passed (only works in same session)
-            // Or better: main.html will save to server, and we play from server.
-
-            // Let's assume we can play back from a local URL if we pass it.
-        }
-
-        // ALTERNATIVE: We can use the File API to show the last recorded video if we had access, but we don't.
-
-        // STRATEGY: 
-        // 1. main.html saves the blob to a global variable or IndexedDB? No, too complex for now.
-        // 2. main.html creates a URL.createObjectURL(blob) and passes it. This works for the current tab session!
-
+        // Video handling
         const videoUrl = sessionStorage.getItem('lastRecordingUrl');
         if (videoUrl) {
             const video = document.getElementById('sessionVideo');
@@ -154,9 +603,135 @@
             downloadBtn.href = videoUrl;
             downloadBtn.download = 'session-recording.webm';
         } else {
-            document.querySelector('p').textContent = "Recording saved to server. Please check the 'HACKATHONRECORDINGS' folder.";
+            document.querySelector('.video-section').insertAdjacentHTML('beforeend', '<p style="color: #888; margin-top: 10px;">Recording saved to server. Please check the \'HACKATHONRECORDINGS\' folder.</p>');
             document.getElementById('downloadBtn').style.display = 'none';
         }
+
+        // Initialize Charts
+        const radarCtx = document.getElementById('radarChart').getContext('2d');
+        const radarChart = new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['English', 'Technical', 'Communication', 'Teamwork', 'Soft Skills', 'Project'],
+                datasets: [{
+                    label: 'Performance Scores',
+                    data: [88, 82, 90, 85, 87, 83],
+                    backgroundColor: 'rgba(0, 255, 65, 0.2)',
+                    borderColor: '#00ff41',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#00ff41',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#00ff41'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            color: '#888',
+                            backdropColor: 'transparent'
+                        },
+                        grid: {
+                            color: '#333'
+                        },
+                        pointLabels: {
+                            color: '#fff',
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        const barChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['English', 'Technical', 'Communication', 'Teamwork', 'Soft Skills', 'Project'],
+                datasets: [{
+                    label: 'Score',
+                    data: [88, 82, 90, 85, 87, 83],
+                    backgroundColor: [
+                        'rgba(0, 255, 65, 0.8)',
+                        'rgba(0, 212, 255, 0.8)',
+                        'rgba(123, 47, 247, 0.8)',
+                        'rgba(255, 159, 64, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(75, 192, 192, 0.8)'
+                    ],
+                    borderColor: [
+                        '#00ff41',
+                        '#00d4ff',
+                        '#7b2ff7',
+                        '#ff9f40',
+                        '#ff6384',
+                        '#4bc0c0'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            color: '#888'
+                        },
+                        grid: {
+                            color: '#333'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#fff'
+                        },
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // Calculate overall score and grade
+        function calculateOverallScore() {
+            const scores = [88, 82, 90, 85, 87, 83];
+            const average = scores.reduce((a, b) => a + b, 0) / scores.length;
+            return Math.round(average);
+        }
+
+        function getGrade(score) {
+            if (score >= 90) return 'Outstanding';
+            if (score >= 80) return 'Excellent';
+            if (score >= 70) return 'Good';
+            if (score >= 60) return 'Satisfactory';
+            return 'Needs Improvement';
+        }
+
+        const overallScore = calculateOverallScore();
+        document.getElementById('overallScore').textContent = overallScore;
+        document.getElementById('performanceGrade').textContent = getGrade(overallScore);
+        document.querySelector('.score-circle').style.setProperty('--score-percent', overallScore + '%');
     </script>
 </body>
 

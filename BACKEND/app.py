@@ -62,7 +62,7 @@ def get_system_prompt(prep_type, difficulty):
     
     # Base prompts for each prep type
     base_prompts = {
-        'interview': """You are an AI Interview Evaluator.
+        'interview': """You are an AI Intervier.
 
 CRITICAL INSTRUCTIONS:
 1. Output EXACTLY ONE sentence.
@@ -74,7 +74,7 @@ CRITICAL INSTRUCTIONS:
 
 Your goal: Ask one relevant question based on the candidate's response.""",
         
-        'hackathon': """You are a Hackathon Judge.
+        'hackathon': """You are a Hackathon Judge, you have to evaluate the projects.
 
 CRITICAL INSTRUCTIONS:
 1. Output EXACTLY ONE sentence.

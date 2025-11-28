@@ -91,7 +91,7 @@
 
         // Turn counting logic
         let turnCount = 0;
-        const MAX_TURNS = 8;
+        const MAX_TURNS = 5;
 
         try {
             const stored = localStorage.getItem('prepySession');
@@ -499,7 +499,7 @@
             // Check if this is the last turn
             let currentSystemPrompt = sessionData?.system_prompt || '';
             if (turnCount >= MAX_TURNS) {
-                currentSystemPrompt += "\n\nSYSTEM INSTRUCTION: This is the final turn. The session is over. Please provide a brief, professional closing statement thanking the candidate/contestant. Do NOT ask any more questions. Just say goodbye.";
+                currentSystemPrompt += "\n\nSYSTEM INSTRUCTION: This is the final turn.  Just say goodbye.";
             }
 
             try {
