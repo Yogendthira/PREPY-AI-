@@ -1,19 +1,19 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-#python -m http.server 8000
 from werkzeug.utils import secure_filename
 import PyPDF2
 from pptx import Presentation
 import requests
 import json
 from dotenv import load_dotenv
+from analysis import analyze_session
 
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend communication
+CORS(app)
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
@@ -57,62 +57,63 @@ def extract_text_from_ppt(file_path):
         print(f"Error extracting PPT: {e}")
     return text
 
-def get_system_prompt(prep_type, difficulty):
-    """Generate system prompt based on prep type and difficulty"""
+def get_system_prompt(prep_type, difficulty, job_role=None):
+    """Generate system prompt based on prep type, difficulty, and job role"""
     
     # Base prompts for each prep type
     base_prompts = {
-        'interview': """You are an AI Intervier.
+   'interview': f"""You are an AI Interviewer{' for the position of ' + job_role if job_role else ''}.
 
-CRITICAL INSTRUCTIONS:
-1. Output EXACTLY ONE sentence.
-2. That sentence must be a QUESTION.
-3. NO greetings (e.g., "Hi", "Hello").
-4. NO statements before the question.
-5. NO multiple questions.
-6. MAX 15 words.
+⚠️ ABSOLUTE RULES - BREAKING THESE WILL FAIL THE TASK:
+1. Your response MUST be EXACTLY ONE SHORT QUESTION
+2. MAXIMUM 10 WORDS - Count them!
+3. NO multiple questions - NO "and", NO commas separating questions
+4. NO introductions, NO explanations, NO statements
+5. Start directly with the question
+6. End with a question mark
 
-Your goal: Ask one relevant question based on the candidate's response.""",
+EXAMPLES OF CORRECT RESPONSES:
+- "What technologies did you use?"
+- "How does it work?"
+- "What problem does this solve?"
+
+EXAMPLES OF WRONG RESPONSES (TOO LONG):
+- "Can you explain the architecture and how it scales?" (TWO questions!)
+- "What specific features does your project incorporate to ensure accuracy?" (TOO LONG!)
+
+Your goal: Ask ONE simple, direct question (max 10 words){' about the job role: ' + job_role if job_role else ''}.""",
         
-        'hackathon': """You are a Hackathon Judge, you have to evaluate the projects.
+        'hackathon': """You are a Hackathon Judge evaluating projects.
 
-CRITICAL INSTRUCTIONS:
-1. Output EXACTLY ONE sentence.
-2. That sentence must be a QUESTION.
-3. NO greetings (e.g., "Hi", "Hello").
-4. NO statements before the question.
-5. NO multiple questions.
-6. MAX 15 words.
+⚠️ ABSOLUTE RULES - BREAKING THESE WILL FAIL THE TASK:
+1. Your response MUST be EXACTLY ONE SHORT QUESTION
+2. MAXIMUM 10 WORDS - Count them!
+3. NO multiple questions - NO "and", NO commas separating questions
+4. NO introductions, NO explanations, NO statements
+5. Start directly with the question
+6. End with a question mark
 
-Your goal: Ask one relevant question based on the project pitch."""
+EXAMPLES OF CORRECT RESPONSES:
+
+- "what is the total build cost of this porject?"
+- "How long did development take?"
+- "How did your team collaborate?"
+
+EXAMPLES OF WRONG RESPONSES (TOO LONG):
+- "What features does it have and what are the limitations?" (TWO questions!)
+- "How can you improve this project in future iterations?" (TOO LONG!)
+
+Your goal: Ask ONE simple, direct question (max 10 words) about the project."""
     }
     
-    # Difficulty modifiers
+    # Difficulty modifiers - SIMPLIFIED
     difficulty_modifiers = {
-        'superman': """
-MODE: EASY
-- Ask simple, fundamental questions.
-- ONE question only.
-
-Example: "What inspired this project?"
-""",
-        
-        'batman': """
-MODE: MODERATE
-- Ask practical implementation questions.
-- ONE question only.
-
-Example: "How does your algorithm handle errors?"
-""",
-        
-        'hulk': """
-MODE: HARD
-- Ask complex technical questions.
-- ONE question only.
-
-Example: "Defend your database choice."
-"""
+        'superman': "Ask basic questions. Example: 'What does it do?'",
+        'batman': "Ask practical questions. Example: 'How does it work?'",
+        'hulk': "Ask technical questions. Example: 'What's the algorithm?'"
     }
+    
+
     
     base = base_prompts.get(prep_type, base_prompts['interview'])
     modifier = difficulty_modifiers.get(difficulty, difficulty_modifiers['hulk'])
@@ -172,6 +173,7 @@ def upload_file():
     file = request.files['file']
     prep_type = request.form.get('type', 'interview')
     difficulty = request.form.get('mode', 'hulk')
+    job_role = request.form.get('job_role', '')
     
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
@@ -188,7 +190,7 @@ def upload_file():
             extracted_text = extract_text_from_ppt(file_path)
         
         # Get system prompt
-        system_prompt = get_system_prompt(prep_type, difficulty)
+        system_prompt = get_system_prompt(prep_type, difficulty, job_role)
         
         # Store extracted text in session for later use
         # Use fixed welcome message instead of AI-generated one
@@ -248,6 +250,38 @@ def chat():
         'message': ai_response,
         'history': conversation_history
     })
+
+@app.route('/api/analyze-session', methods=['POST'])
+def analyze_session_endpoint():
+    data = request.json
+    history = data.get('history', [])
+    job_role = data.get('job_role', 'Candidate')
+    
+    if not history:
+        return jsonify({"success": False, "error": "No history provided"}), 400
+
+    analysis_result = analyze_session(history, job_role)
+    
+    if analysis_result:
+        return jsonify({"success": True, "data": analysis_result})
+    else:
+        # Fallback data if AI fails
+        return jsonify({
+            "success": False, 
+            "error": "Analysis failed",
+            "data": {
+                "scores": {
+                    "english": 0, "technical": 0, "communication": 0, 
+                    "teamwork": 0, "soft_skills": 0, "project": 0, "overall": 0
+                },
+                "feedback": {
+                    "strengths": "Analysis failed. Please try again.",
+                    "improvements": "N/A",
+                    "english_assessment": "N/A",
+                    "recommendations": "N/A"
+                }
+            }
+        })
 
 @app.route('/api/save-recording', methods=['POST'])
 def save_recording():

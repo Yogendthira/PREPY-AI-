@@ -21,6 +21,15 @@
             <h1 id="uploadTitle">Upload Your Resume</h1>
             <p class="subtitle" id="uploadSubtitle">Select your file to begin the evaluation</p>
 
+            <!-- Job Role Input (Only for Interview Mode) -->
+            <div class="job-role-container" id="jobRoleContainer" style="display: none; margin: 20px 0;">
+                <label for="jobRoleInput" style="display: block; margin-bottom: 8px; color: #fff; font-weight: 500;">Job
+                    Role / Position:</label>
+                <input type="text" id="jobRoleInput"
+                    placeholder="e.g., Software Engineer, Data Scientist, Product Manager" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); 
+                              background: rgba(255,255,255,0.1); color: #fff; font-size: 14px;" />
+            </div>
+
             <div class="upload-box">
                 <div class="upload-area" id="uploadArea">
                     <div class="icon-container">
@@ -75,13 +84,17 @@
         };
         document.getElementById('difficultyImage').src = modeImages[mode];
 
-        // Set upload title based on prep type
+        // Set upload title based on prep type and show/hide job role field
         if (prepType === 'interview') {
             document.getElementById('uploadTitle').textContent = 'Upload Your Resume';
             document.getElementById('uploadSubtitle').textContent = 'Select your resume to begin the interview evaluation';
+            // Show job role field for interview mode
+            document.getElementById('jobRoleContainer').style.display = 'block';
         } else if (prepType === 'hackathon') {
             document.getElementById('uploadTitle').textContent = 'Upload Your Presentation';
             document.getElementById('uploadSubtitle').textContent = 'Upload your project presentation or idea document';
+            // Hide job role field for hackathon mode
+            document.getElementById('jobRoleContainer').style.display = 'none';
         }
 
         // File handling
@@ -165,6 +178,12 @@
             formData.append('file', selectedFile);
             formData.append('type', prepType);
             formData.append('mode', mode);
+
+            // Add job role if in interview mode
+            if (prepType === 'interview') {
+                const jobRole = document.getElementById('jobRoleInput').value.trim();
+                formData.append('job_role', jobRole);
+            }
 
             try {
                 const response = await fetch('http://localhost:5000/api/upload', {
