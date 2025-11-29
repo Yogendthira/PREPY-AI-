@@ -8,6 +8,7 @@ import requests
 import json
 from dotenv import load_dotenv
 from analysis import analyze_session
+from interview_call_service import make_interview_call
 
 # Load environment variables
 load_dotenv()
@@ -64,46 +65,55 @@ def get_system_prompt(prep_type, difficulty, job_role=None):
     base_prompts = {
    'interview': f"""You are an AI Interviewer{' for the position of ' + job_role if job_role else ''}.
 
-⚠️ ABSOLUTE RULES - BREAKING THESE WILL FAIL THE TASK:
-1. Your response MUST be EXACTLY ONE SHORT QUESTION
-2. MAXIMUM 10 WORDS - Count them!
-3. NO multiple questions - NO "and", NO commas separating questions
-4. NO introductions, NO explanations, NO statements
-5. Start directly with the question
-6. End with a question mark
+⚠️ CRITICAL RULES - YOU WILL BE PENALIZED FOR VIOLATIONS:
+1. OUTPUT ONLY A QUESTION - NOTHING ELSE
+2. MAXIMUM 10 WORDS TOTAL
+3. NO explanations like "Since...", "I will...", "Let me..."
+4. NO multiple questions in one response
+5. NO commas separating multiple questions
+6. START with the question word (What/How/Why/Did/Can/etc.)
+7. END with a question mark (?)
 
-EXAMPLES OF CORRECT RESPONSES:
+✅ PERFECT EXAMPLES (COPY THIS STYLE):
 - "What technologies did you use?"
 - "How does it work?"
-- "What problem does this solve?"
+- "Why did you choose this approach?"
+- "Did you use any frameworks?"
+- "Can you explain the architecture?"
 
-EXAMPLES OF WRONG RESPONSES (TOO LONG):
-- "Can you explain the architecture and how it scales?" (TWO questions!)
-- "What specific features does your project incorporate to ensure accuracy?" (TOO LONG!)
+❌ TERRIBLE EXAMPLES (NEVER DO THIS):
+- "Since no framework is mentioned, did you use one?" (TOO LONG + EXPLANATION!)
+- "I will ask about performance. How fast is it?" (MULTIPLE SENTENCES!)
+- "Let me understand: what does it do?" (INTRODUCTION!)
+- "What features does it have and what are limitations?" (TWO QUESTIONS!)
 
-Your goal: Ask ONE simple, direct question (max 10 words){' about the job role: ' + job_role if job_role else ''}.""",
+🎯 YOUR ONLY JOB: Generate ONE question (max 10 words){' about ' + job_role if job_role else ''}.""",
         
-        'hackathon': """You are a Hackathon Judge evaluating projects.
+        'hackathon': f"""You are a Hackathon Judge evaluating projects.
 
-⚠️ ABSOLUTE RULES - BREAKING THESE WILL FAIL THE TASK:
-1. Your response MUST be EXACTLY ONE SHORT QUESTION
-2. MAXIMUM 10 WORDS - Count them!
-3. NO multiple questions - NO "and", NO commas separating questions
-4. NO introductions, NO explanations, NO statements
-5. Start directly with the question
-6. End with a question mark
+⚠️ CRITICAL RULES - YOU WILL BE PENALIZED FOR VIOLATIONS:
+1. OUTPUT ONLY A QUESTION - NOTHING ELSE
+2. MAXIMUM 10 WORDS TOTAL
+3. NO explanations like "Since...", "I will...", "Let me..."
+4. NO multiple questions in one response
+5. NO commas separating multiple questions
+6. START with the question word (What/How/Why/Did/Can/etc.)
+7. END with a question mark (?)
 
-EXAMPLES OF CORRECT RESPONSES:
-
-- "what is the total build cost of this porject?"
+✅ PERFECT EXAMPLES (COPY THIS STYLE):
+- "What is the build cost?"
 - "How long did development take?"
-- "How did your team collaborate?"
+- "Why did you choose this tech?"
+- "Did your team collaborate remotely?"
+- "Can it scale to production?"
 
-EXAMPLES OF WRONG RESPONSES (TOO LONG):
-- "What features does it have and what are the limitations?" (TWO questions!)
-- "How can you improve this project in future iterations?" (TOO LONG!)
+❌ TERRIBLE EXAMPLES (NEVER DO THIS):
+- "Since you mentioned YOLO, what framework did you use?" (TOO LONG + EXPLANATION!)
+- "I will formulate a question: how does it work?" (MULTIPLE SENTENCES!)
+- "Let me ask about performance. Is it fast?" (INTRODUCTION!)
+- "What features does it have and what are limitations?" (TWO QUESTIONS!)
 
-Your goal: Ask ONE simple, direct question (max 10 words) about the project."""
+🎯 YOUR ONLY JOB: Generate ONE question (max 10 words) about the project."""
     }
     
     # Difficulty modifiers - SIMPLIFIED
@@ -135,9 +145,10 @@ def call_ollama_api(messages, system_prompt):
             'messages': formatted_messages,
             'stream': False,
             'options': {
-                'num_predict': 60,  # Allow enough tokens to generate the full thought
-                'temperature': 0.7,
-                'top_p': 0.9
+                'num_predict': 30,  # Reduced to force shorter responses
+                'temperature': 0.3,  # Lower temperature for more focused output
+                'top_p': 0.8,
+                'stop': ['\n', '.', '!']  # Stop at sentence boundaries
             }
         }
         
@@ -147,18 +158,51 @@ def call_ollama_api(messages, system_prompt):
         result = response.json()
         content = result['message']['content'].strip()
         
-        # --- POST-PROCESSING: Extract ONLY the question ---
-        # 1. If there's a question mark, take everything up to the first one
+        # --- AGGRESSIVE POST-PROCESSING: Extract ONLY the question ---
+        import re
+        
+        # Remove common problematic prefixes
+        prefixes_to_remove = [
+            r'^Since\s+.*?,\s*',
+            r'^I\s+will\s+.*?[:.]\s*',
+            r'^Let\s+me\s+.*?[:.]\s*',
+            r'^Given\s+.*?,\s*',
+            r'^Based\s+on\s+.*?,\s*',
+            r'^Considering\s+.*?,\s*',
+            r'^To\s+understand\s+.*?,\s*',
+        ]
+        
+        for prefix in prefixes_to_remove:
+            content = re.sub(prefix, '', content, flags=re.IGNORECASE)
+        
+        # If there's a colon, take everything after the last colon
+        if ':' in content:
+            content = content.split(':')[-1].strip()
+        
+        # If there's a question mark, take everything up to the first one
         if '?' in content:
             content = content.split('?')[0] + '?'
-            
-        # 2. If there are multiple sentences (split by . or !), take the last part
-        # This removes "Intro text. Question?" -> "Question?"
-        import re
+        
+        # Split by sentence delimiters and take the part with a question word
         sentences = re.split(r'[.!]\s+', content)
-        if sentences:
-            content = sentences[-1].strip()
-            
+        
+        # Find the sentence that looks most like a question
+        question_words = ['what', 'how', 'why', 'when', 'where', 'who', 'which', 'did', 'do', 'does', 'can', 'could', 'would', 'should', 'is', 'are', 'was', 'were']
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            first_word = sentence.split()[0].lower() if sentence.split() else ''
+            if first_word in question_words and '?' in sentence:
+                content = sentence
+                break
+        
+        # Final cleanup: ensure it ends with ?
+        if not content.endswith('?'):
+            content += '?'
+        
+        # Remove any remaining multiple spaces
+        content = re.sub(r'\s+', ' ', content).strip()
+        
         return content
     except Exception as e:
         print(f"Ollama API Error: {e}")
@@ -228,11 +272,23 @@ def chat():
     system_prompt = data.get('system_prompt', '')
     extracted_text = data.get('extracted_text', '')
     
+    is_final_turn = data.get('is_final_turn', False)
+    
     if not user_message:
         return jsonify({'error': 'No message provided'}), 400
     
     # Add user message to history
     conversation_history.append({'role': 'user', 'content': user_message})
+
+    # Check for final turn
+    if is_final_turn:
+        ai_response = "Thank you for your time. That concludes our session."
+        conversation_history.append({'role': 'assistant', 'content': ai_response})
+        return jsonify({
+            'success': True,
+            'message': ai_response,
+            'history': conversation_history
+        })
     
     # Add context about uploaded content if this is early in conversation
     if len(conversation_history) <= 3 and extracted_text:
@@ -256,6 +312,7 @@ def analyze_session_endpoint():
     data = request.json
     history = data.get('history', [])
     job_role = data.get('job_role', 'Candidate')
+    prep_type = data.get('prep_type', 'interview')
     
     if not history:
         return jsonify({"success": False, "error": "No history provided"}), 400
@@ -263,6 +320,21 @@ def analyze_session_endpoint():
     analysis_result = analyze_session(history, job_role)
     
     if analysis_result:
+        # Check if we should make a call (Score > 80%)
+        try:
+            scores = analysis_result.get('scores', {})
+            overall_score = scores.get('overall', 0)
+            
+            # Trigger call in background (non-blocking ideally, but here synchronous for simplicity)
+            call_result = make_interview_call(overall_score, "Candidate", job_role, prep_type)
+            
+            # Add call status to response
+            analysis_result['call_status'] = call_result
+            
+        except Exception as e:
+            print(f"Error triggering call: {e}")
+            analysis_result['call_status'] = {'success': False, 'error': str(e)}
+
         return jsonify({"success": True, "data": analysis_result})
     else:
         # Fallback data if AI fails
@@ -314,6 +386,7 @@ def save_recording():
     except Exception as e:
         print(f"❌ Error saving recording: {e}")
         return jsonify({'error': str(e)}), 500
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():

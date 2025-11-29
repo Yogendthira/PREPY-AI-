@@ -63,7 +63,14 @@ def analyze_session(history, job_role="Candidate"):
     5. Soft Skills
     6. Project Quality
 
-    Return ONLY JSON:
+    ⚠️ CRITICAL JSON FORMATTING RULES:
+    - Return ONLY valid JSON, NO comments (//)
+    - ALL string values MUST be in double quotes
+    - ALL numeric values MUST be numbers (0-100), not strings
+    - NO trailing commas
+    - If a category doesn't apply, use 0 as the score
+
+    Return ONLY this JSON structure:
     {{
         "scores": {{
             "english": 0,
@@ -107,9 +114,42 @@ def analyze_session(history, job_role="Candidate"):
                 elif "```" in response_text:
                     response_text = response_text.split("```")[1].split("```")[0]
                 
+                # Clean up common JSON issues from AI responses
+                import re
+                
+                # Remove single-line comments (// ...)
+                response_text = re.sub(r'//.*?(?=\n|$)', '', response_text)
+                
+                # Remove multi-line comments (/* ... */)
+                response_text = re.sub(r'/\*.*?\*/', '', response_text, flags=re.DOTALL)
+                
+                # Fix unquoted text values (e.g., Not Applicable -> "Not Applicable")
+                # This regex finds values after : that aren't numbers, booleans, null, or already quoted
+                def quote_unquoted_values(match):
+                    value = match.group(1).strip()
+                    # Skip if it's already a number, boolean, null, or quoted string
+                    if value in ['true', 'false', 'null'] or value.startswith('"') or value.startswith('{') or value.startswith('['):
+                        return match.group(0)
+                    # Check if it's a number
+                    try:
+                        float(value.rstrip(','))
+                        return match.group(0)
+                    except ValueError:
+                        # Quote the value, preserving trailing comma if present
+                        if value.endswith(','):
+                            return f': "{value[:-1]}",'
+                        else:
+                            return f': "{value}"'
+                
+                response_text = re.sub(r':\s*([^,\n\{\}\[\]]+?)(?=,|\n|\})', quote_unquoted_values, response_text)
+                
+                # Remove trailing commas before closing braces/brackets
+                response_text = re.sub(r',(\s*[}\]])', r'\1', response_text)
+                
                 return json.loads(response_text.strip())
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
                 print("Error parsing JSON from AI response")
+                print(f"JSON Error: {e}")
                 print(f"Raw response: {response_text}")
                 return None
         else:

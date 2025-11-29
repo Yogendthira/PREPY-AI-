@@ -400,6 +400,11 @@
                 document.getElementById('loadingOverlay').style.display = 'flex';
             }
 
+            // Get session metadata
+            const sessionMetadata = JSON.parse(sessionStorage.getItem('sessionMetadata') || '{}');
+            const jobRole = sessionMetadata.jobRole || "Candidate";
+            const prepType = sessionMetadata.prepType || "interview";
+
             try {
                 const response = await fetch(`http://127.0.0.1:${port}/api/analyze-session`, {
                     method: 'POST',
@@ -408,7 +413,8 @@
                     },
                     body: JSON.stringify({
                         history: conversationHistory,
-                        job_role: "Candidate"
+                        job_role: jobRole,
+                        prep_type: prepType
                     })
                 });
 
