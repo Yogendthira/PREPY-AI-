@@ -23,7 +23,6 @@ try {
         const session = JSON.parse(stored);
         sessionData = session.sessionData;
         conversationHistory = session.history || [];
-        turnCount = Math.floor(conversationHistory.length / 2);
     }
 } catch (e) {
     console.error('Session load error:', e);
@@ -329,14 +328,6 @@ function endSession() {
     // Save conversation history to sessionStorage for review dashboard
     sessionStorage.setItem('conversationHistory', JSON.stringify(conversationHistory));
 
-    // Save session metadata
-    if (sessionData) {
-        sessionStorage.setItem('sessionMetadata', JSON.stringify({
-            prepType: sessionData.prep_type || 'interview',
-            jobRole: sessionData.job_role || 'Candidate'
-        }));
-    }
-
     localStorage.removeItem('prepySession');
     window.location.href = 'reviewdashboard.html';
 }
@@ -411,8 +402,10 @@ async function sendMessage() {
     turnCount++;
 
     // Check if this is the last turn
-    // Check if this is the last turn
-    const isFinalTurn = turnCount >= MAX_TURNS;
+    let currentSystemPrompt = sessionData?.system_prompt || '';
+    if (turnCount >= MAX_TURNS) {
+        currentSystemPrompt += "\n\nSYSTEM INSTRUCTION: This is the final turn.  Just say goodbye.";
+    }
 
     try {
         const res = await fetch('http://localhost:5000/api/chat', {
@@ -421,9 +414,8 @@ async function sendMessage() {
             body: JSON.stringify({
                 message: msg,
                 history: conversationHistory,
-                system_prompt: sessionData?.system_prompt || '',
-                extracted_text: sessionData?.extracted_text || '',
-                is_final_turn: isFinalTurn
+                system_prompt: currentSystemPrompt,
+                extracted_text: sessionData?.extracted_text || ''
             })
         });
 
